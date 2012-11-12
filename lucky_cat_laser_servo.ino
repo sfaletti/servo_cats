@@ -18,7 +18,7 @@ int buttonState = 0;
 int prevState = 0;
 
 unsigned long resetCounter = 0;
-const int resetTime = 3000; //reset to front, in milliseconds
+const int resetTime = 2000; //reset to front, in milliseconds
 
 unsigned long debounceTimer = 0;
 const int debounceDelay = 50;
@@ -52,6 +52,8 @@ void setup() {
     servoCat[i].attach(servoPin[i]); 
     servoCat[i].write(90);
   }
+
+  Serial.begin(9600);
 }
 
 void loop() {
@@ -64,11 +66,13 @@ void loop() {
       buttonVal = 0;
     }
   }
-  if(buttonState != buttonVal){ //debounce the buttonVal, whichever pin it came from
-    debounceTimer = millis(); //reset the debounce timer
-  }
-  if(millis() - debounceTimer >= debounceDelay){ //the button has been pressed long enough to be done bouncing
-    buttonState = buttonVal; //set the buttonState as the button bounce period is done
+  Serial.print("buttonVal: ");
+  Serial.println(buttonVal);
+
+  if(buttonState != buttonVal){ 
+    buttonState = buttonVal; //set the buttonState to the current pressed button. Ignore if this button is already pressed
+    Serial.print("buttonState: ");
+    Serial.println(buttonState);
     if (buttonState > 0){
       resetCounter = millis(); //set reset counter in case no button is pressed after this
       if (buttonState != prevState){ // if the cats are already not looking at that button, or it's not held down
@@ -76,12 +80,12 @@ void loop() {
         prevState = buttonState; //upate the current position
       }
     }
-    /*when no button has been pressed for the reset delay time
-     also make sure that this does not run continuously while no button is pressed*/
-    else if (buttonState == 0 && millis() - resetCounter >= resetTime && prevState > 0){
-      turnCats(0); //cats face front
-      prevState = 0; //update the current position
-    }
+  }
+  /*when no button has been pressed for the reset delay time
+   also make sure that this does not run continuously while no button is pressed*/
+  if (buttonState == 0 && (millis() - resetCounter) >= resetTime && prevState > 0){
+    turnCats(0); //cats face front
+    prevState = 0; //update the current position
   }
 }
 
@@ -111,6 +115,7 @@ void servoSettings(int servoPos[]){
     servoCat[i].write(servoPos[i]);
   }
 }
+
 
 
 
