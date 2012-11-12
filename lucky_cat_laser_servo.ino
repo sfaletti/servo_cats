@@ -9,114 +9,128 @@
  */
 
 #include <Servo.h> //import servo library
-#include <Bounce.h> //import debounce library
 
 const int numCats = 4;
+const int btnCount = 4;
+
+int buttonVal = 0;
+int buttonState = 0;
+int prevState = 0;
+
+unsigned long resetCounter = 0;
+const int resetTime = 3000; //reset to front, in milliseconds
+
+unsigned long debounceTimer = 0;
+const int debounceDelay = 50;
+
 Servo servoCat[numCats];
 
-int pinCount = 4;
-const int buttonPins[] = {
-  6, 5, 4, 3
-};
-int pressedButton = 0;
+int catTurnVal0[] = {
+  90, 90, 90, 90};
+int catTurnVal1[] = {
+  90, 100, 120, 140};
+int catTurnVal2[] = {
+  80, 90, 110, 130};
+int catTurnVal3[] = {
+  60, 80, 90, 110};
+int catTurnVal4[] = {
+  30, 60, 80, 90};
 
+const int buttonPins[] = {
+  2,3,4,5
+};
 const int servoPin[] = {
   8, 9, 10, 11
 };
 
-int front = 90;
-int left = 45;
-int right = 135;
-int tweak = 10;
-
 void setup() {
-
-  for (int a = 0; a < pinCount; a++) {  
-    pinMode(buttonPins[a], INPUT);
+  for (int i=0; i<btnCount; i++) {  
+    pinMode(buttonPins[i], INPUT_PULLUP); //set button pins as INPUT w/ internal pullup resistor
   }
 
-  for (int f = 0; f < numCats; f++) {
-    servoCat[f].attach(servoPin[f]); 
-    servoCat[f].write(90);
+  for (int i = 0; i < numCats; i++) { //setup servo pins
+    servoCat[i].attach(servoPin[i]); 
+    servoCat[i].write(90);
   }
 }
 
 void loop() {
-
-  for (int i = 0; i < numCats; i++) {
-    if (digitalRead(buttonPins[i])) {
-      
+  for (int i=0; i<btnCount; i++) { 
+    if (digitalRead(buttonPins[i]) == LOW){
+      buttonVal=i+1; //get reading from one of 4 pins. 0=no button.
+      break; //if a button is pressed get on with life
+    }
+    else { //if no buttons are pressed
+      buttonVal = 0;
     }
   }
-  
-  
-  
-  
-  for (int i=0; i<numCats; i++) {
-    turnCatFront(i);
+  if(buttonState != buttonVal){ //debounce the buttonVal, whichever pin it came from
+    debounceTimer = millis(); //reset the debounce timer
   }
-
-  if (digitalRead(buttonPins[0])) {
-
-    for (int i=0; i<numCats; i++) {
-      turnCatLeft(i);
+  if(millis() - debounceTimer >= debounceDelay){ //the button has been pressed long enough to be done bouncing
+    buttonState = buttonVal; //set the buttonState as the button bounce period is done
+    if (buttonState > 0){
+      resetCounter = millis(); //set reset counter in case no button is pressed after this
+      if (buttonState != prevState){ // if the cats are already not looking at that button, or it's not held down
+        turnCats(buttonState); //run the turn function
+        prevState = buttonState; //upate the current position
+      }
     }
-  }
-
-  if (digitalRead(buttonPins[1])) {
-
-    turnCatRight(0);
-    for (int i=1; i<(numCats-1); i++) {
-      turnCatLeft(i);
+    /*when no button has been pressed for the reset delay time
+     also make sure that this does not run continuously while no button is pressed*/
+    else if (buttonState == 0 && millis() - resetCounter >= resetTime && prevState > 0){
+      turnCats(0); //cats face front
+      prevState = 0; //update the current position
     }
-  }
-
-  if (digitalRead(buttonPins[2])) {
-
-    for (int i=0; i<(numCats-1); i++) {
-      turnCatRight(i);
-    }
-    turnCatLeft(3);
-  }
-
-  if (digitalRead(buttonPins[3])) {
-
-    for (int i=0; i<numCats; i++) {
-      turnCatRight(i);
-    }
-  }
-
-}
-
-void turnCatLeft(int _x) {
-  if (servoCat[_x].read() != left) {
-    servoCat[_x].write(left);
-  } 
-  else if (servoCat[_x].read() == left) {
-    servoCat[_x].write(left+tweak);
-    servoCat[_x].write(left);
   }
 }
 
-void turnCatRight(int _x) {
-  if (servoCat[_x].read() != right) {
-    servoCat[_x].write(right);
-  } 
-  else if (servoCat[_x].read() == right) {
-    servoCat[_x].write(right+tweak);
-    servoCat[_x].write(right);
+void turnCats(int faceVal){
+  switch(faceVal){
+    case(0):
+    servoSettings(catTurnVal0);
+    break;
+    case (1):
+    servoSettings(catTurnVal1);
+    break;
+    case(2):
+    servoSettings(catTurnVal2);
+    break; 
+    case(3):
+    servoSettings(catTurnVal3);
+    break;
+    case(4):
+    servoSettings(catTurnVal4);
+    break;
+  }
+  //TODO implement light function at end of turn. Need LED string
+}
+
+void servoSettings(int servoPos[]){
+  for (int i=0; i<4; i++){
+    servoCat[i].write(servoPos[i]);
   }
 }
 
-void turnCatFront(int _x) {
-  if (servoCat[_x].read() != front) {
-    servoCat[_x].write(front);
-  } 
-  else if (servoCat[_x].read() == front) {
-    servoCat[_x].write(front+tweak);
-    servoCat[_x].write(front);
-  }
-}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
