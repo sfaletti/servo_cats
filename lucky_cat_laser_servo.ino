@@ -77,6 +77,7 @@ void loop() {
       resetCounter = millis(); //set reset counter in case no button is pressed after this
       if (buttonState != prevState){ // if the cats are already not looking at that button, or it's not held down
         turnCats(buttonState); //run the turn function
+        Serial.println("buttonpressed");
         prevState = buttonState; //upate the current position
       }
     }
@@ -85,6 +86,7 @@ void loop() {
    also make sure that this does not run continuously while no button is pressed*/
   if (buttonState == 0 && (millis() - resetCounter) >= resetTime && prevState > 0){
     turnCats(0); //cats face front
+    Serial.println("forward");
     prevState = 0; //update the current position
   }
 }
